@@ -44,10 +44,11 @@ export default function Home() {
     if (message.trim() || files.length > 0) {
       setIsUploading(true);
       
-      const uploadedFiles = [];
-      for (const filePreview of files) {
+      if (files.length > 0) {
         const formData = new FormData();
-        formData.append('file', filePreview.file);
+        files.forEach(filePreview => {
+          formData.append('file', filePreview.file);
+        });
         
         try {
           const response = await axios.post('/api/upload', formData, {
@@ -55,14 +56,16 @@ export default function Home() {
               'Content-Type': 'multipart/form-data'
             }
           });
-          uploadedFiles.push(response.data);
+          
+          toast.success(`${files.length} file(s) queued for processing`);
+          console.log('Files queued:', response.data);
         } catch (error) {
           console.error('Upload error:', error);
-          toast.error('Failed to upload file');
+          toast.error('Failed to queue files');
         }
       }
       
-      console.log('Submitting:', { message, uploadedFiles });
+      console.log('Submitting:', { message, files: files.length });
       setMessage('');
       setFiles([]);
       setIsUploading(false);

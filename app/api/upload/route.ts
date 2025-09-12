@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { ALLOWED_TYPES, MAX_FILE_SIZE, MAX_FILES_COUNT } from '@/constants/uploads';
+import { addFileProcessingJob } from '@/app/lib/queue/fileProcessingQueue';
+import { updateBatchStatus } from '@/app/lib/queue/worker';
+import { FileProcessingJobData } from '@/app/lib/queue/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,31 +40,54 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const uploadDir = join(process.cwd(), 'user-uploads');
+    const batchId = uuidv4();
     
+    const uploadDir = join(process.cwd(), 'user-uploads');
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true });
     }
 
-    const uploadedFiles = [];
-
+    const savedFiles = [];
     for (const file of files) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const filepath = join(uploadDir, file.name);
+      const filename = file.name;
+      const filepath = join(uploadDir, filename);
       
       await writeFile(filepath, buffer);
       
-      uploadedFiles.push({
-        filename: file.name,
+      savedFiles.push({
+        id: uuidv4(),
+        filename,
+        originalname: file.name,
         size: file.size,
-        type: file.type
+        type: file.type,
+        filepath,
       });
     }
 
+    const jobData: FileProcessingJobData = {
+      batchId,
+      files: savedFiles,
+    };
+
+    await updateBatchStatus(batchId, {
+      batchId,
+      status: 'pending',
+      progress: 0,
+      totalFiles: files.length,
+      processedFiles: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const jobId = await addFileProcessingJob(jobData);
+
     return NextResponse.json({
-      message: `${files.length} file(s) uploaded successfully`,
-      files: uploadedFiles
+      message: `${files.length} file(s) queued for processing`,
+      batchId,
+      jobId,
+      totalFiles: files.length,
     });
 
   } catch (error) {
