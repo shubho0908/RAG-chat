@@ -1,0 +1,77 @@
+'use client';
+
+import React, { useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Root as TooltipRoot, Trigger as TooltipTrigger, Portal as TooltipPortal, Content as TooltipContent } from '@radix-ui/react-tooltip';
+import { Send, RotateCw } from 'lucide-react';
+
+interface ChatInputProps {
+  message: string;
+  setMessage: React.Dispatch<React.SetStateAction<string>>;
+  onSubmit: () => void;
+  isUploading: boolean;
+  hasFiles: boolean;
+}
+
+export function ChatInput({ message, setMessage, onSubmit, isUploading, hasFiles }: ChatInputProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      onSubmit();
+    }
+  };
+
+  return (
+    <div className="flex items-end flex-1">
+      <div className="flex-1 relative">
+        <textarea
+          ref={textareaRef}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Ask me anything about your documents..."
+          className="w-full bg-transparent text-gray-100 placeholder-gray-500 resize-none outline-none max-h-32"
+          rows={1}
+          style={{ height: 'auto' }}
+          onInput={(e) => {
+            const target = e.target as HTMLTextAreaElement;
+            target.style.height = 'auto';
+            target.style.height = `${target.scrollHeight}px`;
+          }}
+        />
+      </div>
+
+      <TooltipRoot>
+        <TooltipTrigger asChild>
+          <button
+            onClick={onSubmit}
+            disabled={(!message.trim() && !hasFiles) || isUploading}
+            className={`ml-3 p-2.5 rounded-xl transition-all ${
+              message.trim() || hasFiles
+                ? 'text-blue-400 bg-blue-400/10 hover:opacity-80' 
+                : 'text-gray-500 bg-[#3A3D41]/50 cursor-not-allowed'
+            }`}
+          >
+            {isUploading ? (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                <RotateCw size={18} />
+              </motion.div>
+            ) : (
+              <Send size={18} />
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipPortal>
+          <TooltipContent className="bg-black text-white px-2 py-1 rounded text-sm" sideOffset={5}>
+            {isUploading ? 'Uploading...' : 'Send message'}
+          </TooltipContent>
+        </TooltipPortal>
+      </TooltipRoot>
+    </div>
+  );
+}
