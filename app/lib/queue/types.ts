@@ -16,7 +16,3 @@ export interface FileProcessingJobData {
 export const QUEUE_NAMES = {
   FILE_PROCESSING: 'file-processing',
 } as const;
-
-export const JOB_TYPES = {
-  PROCESS_FILES: 'process-files',
-} as const;

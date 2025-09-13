@@ -11,10 +11,13 @@ interface ChatInputProps {
   onSubmit: () => void;
   isUploading: boolean;
   hasFiles: boolean;
+  hasProcessedDocs?: boolean;
   isProcessing: boolean;
+  placeholder?: string;
+  disabled?: boolean;
 }
 
-export function ChatInput({ message, setMessage, onSubmit, isUploading, hasFiles, isProcessing }: ChatInputProps) {
+export function ChatInput({ message, setMessage, onSubmit, isUploading, hasFiles, hasProcessedDocs = false, isProcessing, placeholder = "Ask me anything about your documents...", disabled = false }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -24,6 +27,12 @@ export function ChatInput({ message, setMessage, onSubmit, isUploading, hasFiles
     }
   };
 
+  const canSubmitDocs = hasFiles && !hasProcessedDocs;
+  const canSubmitChat = hasProcessedDocs;
+
+  const isSubmitDisabled = disabled || isUploading || isProcessing || (!canSubmitDocs && !canSubmitChat) || !message.trim();
+  const canSubmit = !disabled && !isProcessing && (canSubmitDocs || canSubmitChat) && message.trim();
+
   return (
     <div className="flex items-end flex-1">
       <div className="flex-1 relative">
@@ -32,10 +41,11 @@ export function ChatInput({ message, setMessage, onSubmit, isUploading, hasFiles
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask me anything about your documents..."
+          placeholder={placeholder}
           className="w-full bg-transparent text-gray-100 placeholder-gray-500 resize-none outline-none max-h-32"
           rows={1}
           style={{ height: 'auto' }}
+          disabled={disabled}
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement;
             target.style.height = 'auto';
@@ -48,9 +58,9 @@ export function ChatInput({ message, setMessage, onSubmit, isUploading, hasFiles
         <TooltipTrigger asChild>
           <button
             onClick={onSubmit}
-            disabled={(!message.trim() && !hasFiles) || isUploading || isProcessing}
+            disabled={isSubmitDisabled}
             className={`ml-3 p-2.5 rounded-xl transition-all ${
-              (message.trim() || hasFiles) && !isProcessing
+              canSubmit
                 ? 'text-blue-400 bg-blue-400/10 hover:opacity-80'
                 : 'text-gray-500 bg-[#3A3D41]/50 cursor-not-allowed'
             }`}
