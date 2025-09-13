@@ -1,6 +1,6 @@
 # RAG Chat Application
 
-<img width="890" height="711" alt="image" src="https://github.com/user-attachments/assets/d0388814-db12-432e-94d4-5632185a42a3" />
+<img width="915" height="711" alt="image" src="https://github.com/user-attachments/assets/3cccd995-bc6d-4d0b-a02b-2e3c7262509a" />
 
 A modern Retrieval-Augmented Generation (RAG) chat application built with Next.js that allows users to upload documents and ask questions based on their content.
 
