@@ -11,12 +11,13 @@ interface ChatInputProps {
   onSubmit: () => void;
   isUploading: boolean;
   hasFiles: boolean;
+  isProcessing: boolean;
 }
 
-export function ChatInput({ message, setMessage, onSubmit, isUploading, hasFiles }: ChatInputProps) {
+export function ChatInput({ message, setMessage, onSubmit, isUploading, hasFiles, isProcessing }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       onSubmit();
@@ -30,7 +31,7 @@ export function ChatInput({ message, setMessage, onSubmit, isUploading, hasFiles
           ref={textareaRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
           placeholder="Ask me anything about your documents..."
           className="w-full bg-transparent text-gray-100 placeholder-gray-500 resize-none outline-none max-h-32"
           rows={1}
@@ -47,14 +48,14 @@ export function ChatInput({ message, setMessage, onSubmit, isUploading, hasFiles
         <TooltipTrigger asChild>
           <button
             onClick={onSubmit}
-            disabled={(!message.trim() && !hasFiles) || isUploading}
+            disabled={(!message.trim() && !hasFiles) || isUploading || isProcessing}
             className={`ml-3 p-2.5 rounded-xl transition-all ${
-              message.trim() || hasFiles
-                ? 'text-blue-400 bg-blue-400/10 hover:opacity-80' 
+              (message.trim() || hasFiles) && !isProcessing
+                ? 'text-blue-400 bg-blue-400/10 hover:opacity-80'
                 : 'text-gray-500 bg-[#3A3D41]/50 cursor-not-allowed'
             }`}
           >
-            {isUploading ? (
+            {isUploading || isProcessing ? (
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -68,7 +69,7 @@ export function ChatInput({ message, setMessage, onSubmit, isUploading, hasFiles
         </TooltipTrigger>
         <TooltipPortal>
           <TooltipContent className="bg-black text-white px-2 py-1 rounded text-sm" sideOffset={5}>
-            {isUploading ? 'Uploading...' : 'Send message'}
+            {isUploading ? 'Uploading...' : isProcessing ? 'Processing files...' : 'Send message'}
           </TooltipContent>
         </TooltipPortal>
       </TooltipRoot>
