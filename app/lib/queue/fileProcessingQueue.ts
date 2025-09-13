@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq';
 import { getIORedisInstance } from '../redis';
-import { FileProcessingJobData, QUEUE_NAMES, JOB_TYPES } from './types';
+import { FileProcessingJobData, QUEUE_NAMES } from './types';
 
 let queueInstance: Queue | null = null;
 
@@ -26,7 +26,7 @@ function getFileProcessingQueue(): Queue {
 
 export async function addFileProcessingJob(data: FileProcessingJobData): Promise<string> {
   const queue = getFileProcessingQueue();
-  const job = await queue.add(JOB_TYPES.PROCESS_FILES, data, {
+  const job = await queue.add('process-files', data, {
     jobId: data.batchId,
   });
   return job.id!;
