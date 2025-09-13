@@ -4,9 +4,6 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { ALLOWED_TYPES, MAX_FILE_SIZE, MAX_FILES_COUNT } from '@/constants/uploads';
-import { addFileProcessingJob } from '@/app/lib/queue/fileProcessingQueue';
-import { updateBatchStatus } from '@/app/lib/queue/worker';
-import { FileProcessingJobData } from '@/app/lib/queue/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,8 +37,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const batchId = uuidv4();
-    
     const uploadDir = join(process.cwd(), 'user-uploads');
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true });
@@ -51,11 +46,11 @@ export async function POST(request: NextRequest) {
     for (const file of files) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const filename = file.name;
+      const filename = `${uuidv4()}-${file.name}`;
       const filepath = join(uploadDir, filename);
-      
+
       await writeFile(filepath, buffer);
-      
+
       savedFiles.push({
         id: uuidv4(),
         filename,
@@ -66,28 +61,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const jobData: FileProcessingJobData = {
-      batchId,
-      files: savedFiles,
-    };
-
-    await updateBatchStatus(batchId, {
-      batchId,
-      status: 'pending',
-      progress: 0,
-      totalFiles: files.length,
-      processedFiles: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    const jobId = await addFileProcessingJob(jobData);
-
     return NextResponse.json({
-      message: `${files.length} file(s) queued for processing`,
-      batchId,
-      jobId,
-      totalFiles: files.length,
+      message: `${files.length} file(s) uploaded successfully`,
+      files: savedFiles,
     });
 
   } catch (error) {

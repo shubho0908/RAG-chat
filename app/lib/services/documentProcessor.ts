@@ -22,7 +22,7 @@ const MIME_TYPES = new Map([
 
 const TEXT_EXTRACTORS = new Map([
   [MIME_TYPES.get('pdf')!, async (buffer: Buffer) => {
-    const pdf = (await import('pdf-parse')).default;
+    const pdf = (await import('pdf-parse-fork')).default;
     const pdfData = await pdf(buffer);
     return pdfData.text;
   }],

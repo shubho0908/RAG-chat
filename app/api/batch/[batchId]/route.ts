@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBatchStatus } from '@/app/lib/queue/worker';
 import { getJobStatus } from '@/app/lib/queue/fileProcessingQueue';
 
 export async function GET(
@@ -13,23 +12,25 @@ export async function GET(
       return NextResponse.json({ error: 'Batch ID is required' }, { status: 400 });
     }
 
-    const batchStatus = await getBatchStatus(batchId);
-    
-    if (!batchStatus) {
+    const jobStatus = await getJobStatus(batchId);
+
+    if (!jobStatus) {
       return NextResponse.json({ error: 'Batch not found' }, { status: 404 });
     }
 
-    const jobStatus = await getJobStatus(batchId);
-
     return NextResponse.json({
-      batch: batchStatus,
-      job: jobStatus ? {
+      batch: {
+        id: batchId,
+        status: jobStatus.finishedOn ? 'completed' : 'processing'
+      },
+      job: {
         id: jobStatus.id,
         progress: jobStatus.progress,
         processedOn: jobStatus.processedOn,
         finishedOn: jobStatus.finishedOn,
         failedReason: jobStatus.failedReason,
-      } : null,
+        returnValue: jobStatus.returnValue,
+      },
     });
 
   } catch (error) {
